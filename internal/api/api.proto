@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package api;
+option go_package = "./api";
+
+message Void {
+
+}
+
+message Message {
+    string body = 1;
+}
+
+message File {
+    string name = 1;
+    string hash = 2;
+    string type = 3;
+    string ext = 4;
+    int64 size = 5;
+}
+
+message Device {
+    string name = 1;
+    string ip = 2;
+    string port = 3;
+    string socketPort = 4;
+    repeated File files = 5;
+    bool active = 6;
+}
+
+message Devices {
+    repeated Device devices = 1;
+}
+
+message FetchResponse {
+    bool success = 1;
+    string error = 2;
+}
+
+service MasterService {
+    rpc Init(Device) returns (Devices) {}
+    rpc Refresh(Device) returns (Device) {}
+}
+
+service NodeService {
+    rpc List(Void) returns (Devices) {}
+    rpc Status(Void) returns (Device) {}
+    rpc Fetch(File) returns (FetchResponse) {}
+}
