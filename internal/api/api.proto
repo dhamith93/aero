@@ -20,12 +20,13 @@ message File {
 }
 
 message Device {
-    string name = 1;
-    string ip = 2;
-    string port = 3;
-    string socketPort = 4;
-    repeated File files = 5;
-    bool active = 6;
+    string hash = 1;
+    string name = 2;
+    string ip = 3;
+    string port = 4;
+    string socketPort = 5;
+    repeated File files = 6;
+    bool active = 7;
 }
 
 message Devices {
@@ -37,12 +38,12 @@ message FetchResponse {
     string error = 2;
 }
 
-service MasterService {
+service Service {
+    // master services
     rpc Init(Device) returns (Devices) {}
     rpc Refresh(Device) returns (Device) {}
-}
 
-service NodeService {
+    // node service
     rpc List(Void) returns (Devices) {}
     rpc Status(Void) returns (Device) {}
     rpc Fetch(File) returns (FetchResponse) {}

@@ -193,12 +193,13 @@ type Device struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name       string  `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Ip         string  `protobuf:"bytes,2,opt,name=ip,proto3" json:"ip,omitempty"`
-	Port       string  `protobuf:"bytes,3,opt,name=port,proto3" json:"port,omitempty"`
-	SocketPort string  `protobuf:"bytes,4,opt,name=socketPort,proto3" json:"socketPort,omitempty"`
-	Files      []*File `protobuf:"bytes,5,rep,name=files,proto3" json:"files,omitempty"`
-	Active     bool    `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
+	Hash       string  `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
+	Name       string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Ip         string  `protobuf:"bytes,3,opt,name=ip,proto3" json:"ip,omitempty"`
+	Port       string  `protobuf:"bytes,4,opt,name=port,proto3" json:"port,omitempty"`
+	SocketPort string  `protobuf:"bytes,5,opt,name=socketPort,proto3" json:"socketPort,omitempty"`
+	Files      []*File `protobuf:"bytes,6,rep,name=files,proto3" json:"files,omitempty"`
+	Active     bool    `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty"`
 }
 
 func (x *Device) Reset() {
@@ -231,6 +232,13 @@ func (x *Device) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Device.ProtoReflect.Descriptor instead.
 func (*Device) Descriptor() ([]byte, []int) {
 	return file_api_api_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Device) GetHash() string {
+	if x != nil {
+		return x.Hash
+	}
+	return ""
 }
 
 func (x *Device) GetName() string {
@@ -390,30 +398,30 @@ var file_api_api_proto_rawDesc = []byte{
 	0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12,
 	0x10, 0x0a, 0x03, 0x65, 0x78, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x65, 0x78,
 	0x74, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x03, 0x52,
-	0x04, 0x73, 0x69, 0x7a, 0x65, 0x22, 0x99, 0x01, 0x0a, 0x06, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
-	0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
-	0x6e, 0x61, 0x6d, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x02, 0x69, 0x70, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x03, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x6f, 0x63, 0x6b,
-	0x65, 0x74, 0x50, 0x6f, 0x72, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x73, 0x6f,
-	0x63, 0x6b, 0x65, 0x74, 0x50, 0x6f, 0x72, 0x74, 0x12, 0x1f, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65,
-	0x73, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x46, 0x69,
-	0x6c, 0x65, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x63, 0x74,
-	0x69, 0x76, 0x65, 0x18, 0x06, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x61, 0x63, 0x74, 0x69, 0x76,
-	0x65, 0x22, 0x30, 0x0a, 0x07, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x12, 0x25, 0x0a, 0x07,
-	0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0b, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07, 0x64, 0x65, 0x76, 0x69,
-	0x63, 0x65, 0x73, 0x22, 0x3f, 0x0a, 0x0d, 0x46, 0x65, 0x74, 0x63, 0x68, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x14,
-	0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65,
-	0x72, 0x72, 0x6f, 0x72, 0x32, 0x5b, 0x0a, 0x0d, 0x4d, 0x61, 0x73, 0x74, 0x65, 0x72, 0x53, 0x65,
-	0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x23, 0x0a, 0x04, 0x49, 0x6e, 0x69, 0x74, 0x12, 0x0b, 0x2e,
-	0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69,
-	0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x22, 0x00, 0x12, 0x25, 0x0a, 0x07, 0x52, 0x65,
-	0x66, 0x72, 0x65, 0x73, 0x68, 0x12, 0x0b, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69,
-	0x63, 0x65, 0x1a, 0x0b, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x22,
-	0x00, 0x32, 0x7e, 0x0a, 0x0b, 0x4e, 0x6f, 0x64, 0x65, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
+	0x04, 0x73, 0x69, 0x7a, 0x65, 0x22, 0xad, 0x01, 0x0a, 0x06, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
+	0x12, 0x12, 0x0a, 0x04, 0x68, 0x61, 0x73, 0x68, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x68, 0x61, 0x73, 0x68, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1e, 0x0a, 0x0a,
+	0x73, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x50, 0x6f, 0x72, 0x74, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x0a, 0x73, 0x6f, 0x63, 0x6b, 0x65, 0x74, 0x50, 0x6f, 0x72, 0x74, 0x12, 0x1f, 0x0a, 0x05,
+	0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x06, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x61, 0x70,
+	0x69, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x52, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x12, 0x16, 0x0a,
+	0x06, 0x61, 0x63, 0x74, 0x69, 0x76, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x61,
+	0x63, 0x74, 0x69, 0x76, 0x65, 0x22, 0x30, 0x0a, 0x07, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73,
+	0x12, 0x25, 0x0a, 0x07, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x0b, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x52, 0x07,
+	0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x22, 0x3f, 0x0a, 0x0d, 0x46, 0x65, 0x74, 0x63, 0x68,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65,
+	0x73, 0x73, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x32, 0xc6, 0x01, 0x0a, 0x07, 0x53, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x12, 0x23, 0x0a, 0x04, 0x49, 0x6e, 0x69, 0x74, 0x12, 0x0b, 0x2e, 0x61,
+	0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e,
+	0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x73, 0x22, 0x00, 0x12, 0x25, 0x0a, 0x07, 0x52, 0x65, 0x66,
+	0x72, 0x65, 0x73, 0x68, 0x12, 0x0b, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63,
+	0x65, 0x1a, 0x0b, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65, 0x22, 0x00,
 	0x12, 0x21, 0x0a, 0x04, 0x4c, 0x69, 0x73, 0x74, 0x12, 0x09, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x56,
 	0x6f, 0x69, 0x64, 0x1a, 0x0c, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x65, 0x76, 0x69, 0x63, 0x65,
 	0x73, 0x22, 0x00, 0x12, 0x22, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x09, 0x2e,
@@ -449,16 +457,16 @@ var file_api_api_proto_goTypes = []interface{}{
 var file_api_api_proto_depIdxs = []int32{
 	2, // 0: api.Device.files:type_name -> api.File
 	3, // 1: api.Devices.devices:type_name -> api.Device
-	3, // 2: api.MasterService.Init:input_type -> api.Device
-	3, // 3: api.MasterService.Refresh:input_type -> api.Device
-	0, // 4: api.NodeService.List:input_type -> api.Void
-	0, // 5: api.NodeService.Status:input_type -> api.Void
-	2, // 6: api.NodeService.Fetch:input_type -> api.File
-	4, // 7: api.MasterService.Init:output_type -> api.Devices
-	3, // 8: api.MasterService.Refresh:output_type -> api.Device
-	4, // 9: api.NodeService.List:output_type -> api.Devices
-	3, // 10: api.NodeService.Status:output_type -> api.Device
-	5, // 11: api.NodeService.Fetch:output_type -> api.FetchResponse
+	3, // 2: api.Service.Init:input_type -> api.Device
+	3, // 3: api.Service.Refresh:input_type -> api.Device
+	0, // 4: api.Service.List:input_type -> api.Void
+	0, // 5: api.Service.Status:input_type -> api.Void
+	2, // 6: api.Service.Fetch:input_type -> api.File
+	4, // 7: api.Service.Init:output_type -> api.Devices
+	3, // 8: api.Service.Refresh:output_type -> api.Device
+	4, // 9: api.Service.List:output_type -> api.Devices
+	3, // 10: api.Service.Status:output_type -> api.Device
+	5, // 11: api.Service.Fetch:output_type -> api.FetchResponse
 	7, // [7:12] is the sub-list for method output_type
 	2, // [2:7] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -553,7 +561,7 @@ func file_api_api_proto_init() {
 			NumEnums:      0,
 			NumMessages:   6,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_api_api_proto_goTypes,
 		DependencyIndexes: file_api_api_proto_depIdxs,
@@ -573,252 +581,220 @@ var _ grpc.ClientConnInterface
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion6
 
-// MasterServiceClient is the client API for MasterService service.
+// ServiceClient is the client API for Service service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type MasterServiceClient interface {
+type ServiceClient interface {
+	// master services
 	Init(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Devices, error)
 	Refresh(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Device, error)
-}
-
-type masterServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewMasterServiceClient(cc grpc.ClientConnInterface) MasterServiceClient {
-	return &masterServiceClient{cc}
-}
-
-func (c *masterServiceClient) Init(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Devices, error) {
-	out := new(Devices)
-	err := c.cc.Invoke(ctx, "/api.MasterService/Init", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *masterServiceClient) Refresh(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Device, error) {
-	out := new(Device)
-	err := c.cc.Invoke(ctx, "/api.MasterService/Refresh", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// MasterServiceServer is the server API for MasterService service.
-type MasterServiceServer interface {
-	Init(context.Context, *Device) (*Devices, error)
-	Refresh(context.Context, *Device) (*Device, error)
-}
-
-// UnimplementedMasterServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedMasterServiceServer struct {
-}
-
-func (*UnimplementedMasterServiceServer) Init(context.Context, *Device) (*Devices, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Init not implemented")
-}
-func (*UnimplementedMasterServiceServer) Refresh(context.Context, *Device) (*Device, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
-}
-
-func RegisterMasterServiceServer(s *grpc.Server, srv MasterServiceServer) {
-	s.RegisterService(&_MasterService_serviceDesc, srv)
-}
-
-func _MasterService_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Device)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterServiceServer).Init(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.MasterService/Init",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterServiceServer).Init(ctx, req.(*Device))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MasterService_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Device)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterServiceServer).Refresh(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/api.MasterService/Refresh",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterServiceServer).Refresh(ctx, req.(*Device))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-var _MasterService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "api.MasterService",
-	HandlerType: (*MasterServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Init",
-			Handler:    _MasterService_Init_Handler,
-		},
-		{
-			MethodName: "Refresh",
-			Handler:    _MasterService_Refresh_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/api.proto",
-}
-
-// NodeServiceClient is the client API for NodeService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type NodeServiceClient interface {
+	// node service
 	List(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Devices, error)
 	Status(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Device, error)
 	Fetch(ctx context.Context, in *File, opts ...grpc.CallOption) (*FetchResponse, error)
 }
 
-type nodeServiceClient struct {
+type serviceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewNodeServiceClient(cc grpc.ClientConnInterface) NodeServiceClient {
-	return &nodeServiceClient{cc}
+func NewServiceClient(cc grpc.ClientConnInterface) ServiceClient {
+	return &serviceClient{cc}
 }
 
-func (c *nodeServiceClient) List(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Devices, error) {
+func (c *serviceClient) Init(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Devices, error) {
 	out := new(Devices)
-	err := c.cc.Invoke(ctx, "/api.NodeService/List", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.Service/Init", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeServiceClient) Status(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Device, error) {
+func (c *serviceClient) Refresh(ctx context.Context, in *Device, opts ...grpc.CallOption) (*Device, error) {
 	out := new(Device)
-	err := c.cc.Invoke(ctx, "/api.NodeService/Status", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.Service/Refresh", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *nodeServiceClient) Fetch(ctx context.Context, in *File, opts ...grpc.CallOption) (*FetchResponse, error) {
+func (c *serviceClient) List(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Devices, error) {
+	out := new(Devices)
+	err := c.cc.Invoke(ctx, "/api.Service/List", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) Status(ctx context.Context, in *Void, opts ...grpc.CallOption) (*Device, error) {
+	out := new(Device)
+	err := c.cc.Invoke(ctx, "/api.Service/Status", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *serviceClient) Fetch(ctx context.Context, in *File, opts ...grpc.CallOption) (*FetchResponse, error) {
 	out := new(FetchResponse)
-	err := c.cc.Invoke(ctx, "/api.NodeService/Fetch", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/api.Service/Fetch", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// NodeServiceServer is the server API for NodeService service.
-type NodeServiceServer interface {
+// ServiceServer is the server API for Service service.
+type ServiceServer interface {
+	// master services
+	Init(context.Context, *Device) (*Devices, error)
+	Refresh(context.Context, *Device) (*Device, error)
+	// node service
 	List(context.Context, *Void) (*Devices, error)
 	Status(context.Context, *Void) (*Device, error)
 	Fetch(context.Context, *File) (*FetchResponse, error)
 }
 
-// UnimplementedNodeServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedNodeServiceServer struct {
+// UnimplementedServiceServer can be embedded to have forward compatible implementations.
+type UnimplementedServiceServer struct {
 }
 
-func (*UnimplementedNodeServiceServer) List(context.Context, *Void) (*Devices, error) {
+func (*UnimplementedServiceServer) Init(context.Context, *Device) (*Devices, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Init not implemented")
+}
+func (*UnimplementedServiceServer) Refresh(context.Context, *Device) (*Device, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Refresh not implemented")
+}
+func (*UnimplementedServiceServer) List(context.Context, *Void) (*Devices, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (*UnimplementedNodeServiceServer) Status(context.Context, *Void) (*Device, error) {
+func (*UnimplementedServiceServer) Status(context.Context, *Void) (*Device, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
-func (*UnimplementedNodeServiceServer) Fetch(context.Context, *File) (*FetchResponse, error) {
+func (*UnimplementedServiceServer) Fetch(context.Context, *File) (*FetchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Fetch not implemented")
 }
 
-func RegisterNodeServiceServer(s *grpc.Server, srv NodeServiceServer) {
-	s.RegisterService(&_NodeService_serviceDesc, srv)
+func RegisterServiceServer(s *grpc.Server, srv ServiceServer) {
+	s.RegisterService(&_Service_serviceDesc, srv)
 }
 
-func _NodeService_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Service_Init_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Device)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).Init(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.Service/Init",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).Init(ctx, req.(*Device))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Service_Refresh_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Device)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ServiceServer).Refresh(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.Service/Refresh",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ServiceServer).Refresh(ctx, req.(*Device))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Service_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServiceServer).List(ctx, in)
+		return srv.(ServiceServer).List(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.NodeService/List",
+		FullMethod: "/api.Service/List",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).List(ctx, req.(*Void))
+		return srv.(ServiceServer).List(ctx, req.(*Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeService_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Service_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Void)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServiceServer).Status(ctx, in)
+		return srv.(ServiceServer).Status(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.NodeService/Status",
+		FullMethod: "/api.Service/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Status(ctx, req.(*Void))
+		return srv.(ServiceServer).Status(ctx, req.(*Void))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NodeService_Fetch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Service_Fetch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(File)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NodeServiceServer).Fetch(ctx, in)
+		return srv.(ServiceServer).Fetch(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/api.NodeService/Fetch",
+		FullMethod: "/api.Service/Fetch",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NodeServiceServer).Fetch(ctx, req.(*File))
+		return srv.(ServiceServer).Fetch(ctx, req.(*File))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _NodeService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "api.NodeService",
-	HandlerType: (*NodeServiceServer)(nil),
+var _Service_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "api.Service",
+	HandlerType: (*ServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Init",
+			Handler:    _Service_Init_Handler,
+		},
+		{
+			MethodName: "Refresh",
+			Handler:    _Service_Refresh_Handler,
+		},
+		{
 			MethodName: "List",
-			Handler:    _NodeService_List_Handler,
+			Handler:    _Service_List_Handler,
 		},
 		{
 			MethodName: "Status",
-			Handler:    _NodeService_Status_Handler,
+			Handler:    _Service_Status_Handler,
 		},
 		{
 			MethodName: "Fetch",
-			Handler:    _NodeService_Fetch_Handler,
+			Handler:    _Service_Fetch_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
