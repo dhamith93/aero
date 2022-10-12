@@ -3,6 +3,7 @@ module github.com/dhamith93/aero
 go 1.18
 
 require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 )
