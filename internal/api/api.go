@@ -6,7 +6,7 @@ import (
 )
 
 type Server struct {
-	Devices  []Device
+	Devices  []*Device
 	Self     *Device
 	IsMaster bool
 }
@@ -15,10 +15,10 @@ func (s *Server) Init(ctx context.Context, in *Device) (*Devices, error) {
 	if !s.IsMaster {
 		return nil, fmt.Errorf("node is not master")
 	}
-	s.Devices = append(s.Devices, *in)
+	s.Devices = append(s.Devices, in)
 	devices := make([]*Device, 0)
 	for i := range s.Devices {
-		devices = append(devices, &s.Devices[i])
+		devices = append(devices, s.Devices[i])
 	}
 	return &Devices{Devices: devices}, nil
 }
@@ -32,7 +32,7 @@ func (s *Server) Refresh(ctx context.Context, in *Device) (*Device, error) {
 		if s.Devices[i].Hash == in.Hash {
 			s.Devices[i].Files = in.Files
 			s.Devices[i].Active = in.Active
-			return &s.Devices[i], nil
+			return s.Devices[i], nil
 		}
 	}
 	return &out, fmt.Errorf("did not find a matching device")
@@ -41,7 +41,7 @@ func (s *Server) Refresh(ctx context.Context, in *Device) (*Device, error) {
 func (s *Server) List(ctx context.Context, in *Void) (*Devices, error) {
 	devices := make([]*Device, 0)
 	for i := range s.Devices {
-		devices = append(devices, &s.Devices[i])
+		devices = append(devices, s.Devices[i])
 	}
 	return &Devices{Devices: devices}, nil
 }
