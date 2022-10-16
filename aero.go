@@ -41,6 +41,7 @@ func (aero *Aero) Start() {
 	var grpcServer *grpc.Server
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
 	aero.Server.Devices = append(aero.Server.Devices, aero.generateAPIDeviceFromDevice(aero.Self))
+	aero.Server.Self = aero.Server.Devices[0]
 	grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
 	api.RegisterServiceServer(grpcServer, &aero.Server)
 	lis, err := net.Listen("tcp", ":"+aero.Config.Port)
@@ -52,18 +53,30 @@ func (aero *Aero) Start() {
 	}
 }
 
-func (aero *Aero) SendInit(d device.Device) []device.Device {
+func (aero *Aero) SendInit(d device.Device, master device.Device) []device.Device {
+	aero.Self = &d
 	device := aero.generateAPIDeviceFromDevice(&d)
-	return aero.initDevice(device)
+	aero.Server.Self = device
+	return aero.initDevice(device, master)
 }
 
 func (aero *Aero) SendRefresh(d device.Device) device.Device {
+	aero.Self = &d
 	device := aero.generateAPIDeviceFromDevice(&d)
+	aero.Server.Self = device
 	return aero.refreshDevice(device)
 }
 
-func (aero *Aero) initDevice(d *api.Device) []device.Device {
-	conn, c, ctx, cancel := aero.createClient()
+func (aero *Aero) GetList() []device.Device {
+	return aero.getList()
+}
+
+func (aero *Aero) GetStatus(d device.Device) device.Device {
+	return aero.getStatus(d)
+}
+
+func (aero *Aero) initDevice(d *api.Device, master device.Device) []device.Device {
+	conn, c, ctx, cancel := aero.createClient(master)
 	defer conn.Close()
 	defer cancel()
 	out := make([]device.Device, 0)
@@ -75,11 +88,12 @@ func (aero *Aero) initDevice(d *api.Device) []device.Device {
 	for _, d := range data.Devices {
 		out = append(out, *aero.generateDeviceFromAPIDevice(d))
 	}
+	aero.Devices = out
 	return out
 }
 
 func (aero *Aero) refreshDevice(d *api.Device) device.Device {
-	conn, c, ctx, cancel := aero.createClient()
+	conn, c, ctx, cancel := aero.createClient(aero.Devices[0])
 	out := device.Device{}
 	defer conn.Close()
 	defer cancel()
@@ -94,13 +108,46 @@ func (aero *Aero) refreshDevice(d *api.Device) device.Device {
 	return out
 }
 
-func (aero *Aero) createClient() (*grpc.ClientConn, api.ServiceClient, context.Context, context.CancelFunc) {
+func (aero *Aero) getList() []device.Device {
+	conn, c, ctx, cancel := aero.createClient(aero.Devices[0])
+	defer conn.Close()
+	defer cancel()
+	out := make([]device.Device, 0)
+	data, err := c.List(ctx, &api.Void{})
+	if err != nil {
+		logger.Log("error", "error sending data: "+err.Error())
+		return nil
+	}
+	for _, d := range data.Devices {
+		out = append(out, *aero.generateDeviceFromAPIDevice(d))
+	}
+	aero.Devices = out
+	return out
+}
+
+func (aero *Aero) getStatus(d device.Device) device.Device {
+	conn, c, ctx, cancel := aero.createClient(d)
+	out := device.Device{}
+	defer conn.Close()
+	defer cancel()
+
+	device, err := c.Status(ctx, &api.Void{})
+	if err != nil {
+		logger.Log("error", "error sending data: "+err.Error())
+		return out
+	}
+
+	out = *aero.generateDeviceFromAPIDevice(device)
+	return out
+}
+
+func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceClient, context.Context, context.CancelFunc) {
 	var (
 		conn *grpc.ClientConn
 		err  error
 	)
 
-	conn, err = grpc.Dial("localhost:9000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err = grpc.Dial(d.Ip+":"+d.Port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		logger.Log("error", "connection error: "+err.Error())
