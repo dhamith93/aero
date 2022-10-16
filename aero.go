@@ -75,6 +75,10 @@ func (aero *Aero) GetStatus(d device.Device) device.Device {
 	return aero.getStatus(d)
 }
 
+func (aero *Aero) FetchFile(d device.Device, fileIdx int) (bool, string) {
+	return aero.fetchFile(d, fileIdx)
+}
+
 func (aero *Aero) initDevice(d *api.Device, master device.Device) []device.Device {
 	conn, c, ctx, cancel := aero.createClient(master)
 	defer conn.Close()
@@ -139,6 +143,24 @@ func (aero *Aero) getStatus(d device.Device) device.Device {
 
 	out = *aero.generateDeviceFromAPIDevice(device)
 	return out
+}
+
+func (aero *Aero) fetchFile(d device.Device, fileIdx int) (bool, string) {
+	conn, c, ctx, cancel := aero.createClient(d)
+	defer conn.Close()
+	defer cancel()
+
+	if fileIdx < 0 || fileIdx >= len(d.Files) {
+		return false, "file doesn't exists in the device"
+	}
+
+	resp, err := c.Fetch(ctx, &api.File{Hash: d.Files[fileIdx].Hash})
+	if err != nil {
+		logger.Log("error", "error sending data: "+err.Error())
+		return false, "error sending file request"
+	}
+
+	return resp.Success, resp.Error
 }
 
 func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceClient, context.Context, context.CancelFunc) {
@@ -210,13 +232,7 @@ func (aero *Aero) generateAPIDeviceFromDevice(d *device.Device) *api.Device {
 func (aero *Aero) generateDeviceFromAPIDevice(d *api.Device) *device.Device {
 	files := make([]file.File, 0)
 	for _, f := range d.Files {
-		files = append(files, file.File{
-			Name: f.Name,
-			Hash: f.Hash,
-			Ext:  f.Ext,
-			Type: f.Type,
-			Size: f.Size,
-		})
+		files = append(files, *aero.generateFileFromAPIFile(f))
 	}
 	return &device.Device{
 		Hash:       d.Hash,
@@ -226,5 +242,15 @@ func (aero *Aero) generateDeviceFromAPIDevice(d *api.Device) *device.Device {
 		SocketPort: d.SocketPort,
 		Active:     d.Active,
 		Files:      files,
+	}
+}
+
+func (aero *Aero) generateFileFromAPIFile(f *api.File) *file.File {
+	return &file.File{
+		Name: f.Name,
+		Hash: f.Hash,
+		Ext:  f.Ext,
+		Type: f.Type,
+		Size: f.Size,
 	}
 }
