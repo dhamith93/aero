@@ -2,7 +2,6 @@ package socketserver
 
 import (
 	"io"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -119,7 +118,7 @@ func (s *SocketServer) RequestFile(d device.Device, fileIdx int) {
 
 	_, err = io.Copy(newFile, connection)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log("ERR", "request_file: "+err.Error())
 	}
 
 	createdFile := file.New(d.Files[fileIdx].Name)
