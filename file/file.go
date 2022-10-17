@@ -19,13 +19,28 @@ type File struct {
 	Size int64  `json:"size,omitempty"`
 }
 
-func (file *File) SetMeta() {
+func New(path string) File {
+	file := File{}
+	file.Path = path
+	file.setMeta()
+	return file
+}
+
+func (file *File) setMeta() {
+	f, err := os.Open(file.Path)
+	if err != nil {
+		logger.Log("ERR", err.Error())
+		return
+	}
+	defer f.Close()
+
 	mtype, err := mimetype.DetectFile(file.Path)
 	if err != nil {
 		logger.Log("ERR", err.Error())
 		return
 	}
-	fi, err := os.Stat(file.Path)
+
+	fileInfo, err := f.Stat()
 	if err != nil {
 		logger.Log("ERR", err.Error())
 		return
@@ -33,22 +48,16 @@ func (file *File) SetMeta() {
 
 	file.Ext = mtype.Extension()
 	file.Type = mtype.String()
-	file.Size = fi.Size()
-	file.Name = fi.Name()
-	file.SetHash()
+	file.Size = fileInfo.Size()
+	file.Name = fileInfo.Name()
+	file.Hash = GetHash(f)
 }
 
-func (file *File) SetHash() {
-	f, err := os.Open(file.Path)
-	if err != nil {
-		logger.Log("ERR", err.Error())
-		return
-	}
-	defer f.Close()
+func GetHash(f *os.File) string {
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
 		logger.Log("ERR", err.Error())
-		return
+		return ""
 	}
-	file.Hash = b64.StdEncoding.EncodeToString(h.Sum(nil))
+	return b64.StdEncoding.EncodeToString(h.Sum(nil))
 }
