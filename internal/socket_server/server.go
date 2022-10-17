@@ -119,6 +119,7 @@ func (s *SocketServer) RequestFile(d device.Device, fileIdx int) {
 	_, err = io.Copy(newFile, connection)
 	if err != nil {
 		logger.Log("ERR", "request_file: "+err.Error())
+		return
 	}
 
 	createdFile := file.New(d.Files[fileIdx].Name)
