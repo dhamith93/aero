@@ -12,6 +12,7 @@ import (
 	"github.com/dhamith93/aero/internal/api"
 	"github.com/dhamith93/aero/internal/auth"
 	"github.com/dhamith93/aero/internal/logger"
+	socketserver "github.com/dhamith93/aero/internal/socket_server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,11 +21,12 @@ import (
 )
 
 type Aero struct {
-	Config   Config
-	Devices  []device.Device
-	Self     *device.Device
-	Server   api.Server
-	IsMaster bool
+	Config       Config
+	Devices      []device.Device
+	Self         *device.Device
+	Server       api.Server
+	SocketServer socketserver.SocketServer
+	IsMaster     bool
 }
 
 func New(config Config, device device.Device, isMaster bool) Aero {
@@ -42,12 +44,14 @@ func (aero *Aero) Start() {
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
 	aero.Server.Devices = append(aero.Server.Devices, aero.generateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
+	aero.SocketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
 	grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
 	api.RegisterServiceServer(grpcServer, &aero.Server)
 	lis, err := net.Listen("tcp", ":"+aero.Config.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+	go aero.SocketServer.Start()
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}
@@ -77,6 +81,10 @@ func (aero *Aero) GetStatus(d device.Device) device.Device {
 
 func (aero *Aero) FetchFile(d device.Device, fileIdx int) (bool, string) {
 	return aero.fetchFile(d, fileIdx)
+}
+
+func (aero *Aero) RequestFile(d device.Device, fileIdx int) {
+	aero.SocketServer.RequestFile(d, fileIdx)
 }
 
 func (aero *Aero) initDevice(d *api.Device, master device.Device) []device.Device {
