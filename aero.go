@@ -21,7 +21,6 @@ import (
 )
 
 type Aero struct {
-	Config       Config
 	Devices      []device.Device
 	Self         *device.Device
 	Server       api.Server
@@ -29,10 +28,8 @@ type Aero struct {
 	IsMaster     bool
 }
 
-func New(config Config, device device.Device, isMaster bool) Aero {
-	aero := Aero{
-		Config: config,
-	}
+func New(device device.Device, isMaster bool) Aero {
+	aero := Aero{}
 	aero.Devices = append(aero.Devices, device)
 	aero.Self = &aero.Devices[0]
 	aero.IsMaster = isMaster
@@ -47,7 +44,7 @@ func (aero *Aero) Start() {
 	aero.SocketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
 	grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
 	api.RegisterServiceServer(grpcServer, &aero.Server)
-	lis, err := net.Listen("tcp", ":"+aero.Config.Port)
+	lis, err := net.Listen("tcp", ":"+aero.Self.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
