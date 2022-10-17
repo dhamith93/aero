@@ -16,24 +16,30 @@ type SocketServer struct {
 	Port    string
 	Devices *[]*api.Device
 	Self    *device.Device
+	server  net.Listener
 }
 
 func (s *SocketServer) Start() {
-	server, err := net.Listen("tcp", "0.0.0.0"+":"+s.Port)
+	var err error
+	s.server, err = net.Listen("tcp", "0.0.0.0"+":"+s.Port)
 	if err != nil {
 		logger.Log("ERR", "socket_server start: "+err.Error())
 		os.Exit(1)
 	}
-	defer server.Close()
+	defer s.server.Close()
 	logger.Log("MSG", "socket_server: listening on 0.0.0.0"+":"+s.Port)
 	for {
-		connection, err := server.Accept()
+		connection, err := s.server.Accept()
 		if err != nil {
 			logger.Log("ERR", "socket_server accepting client: "+err.Error())
 			os.Exit(1)
 		}
 		go s.processClient(connection)
 	}
+}
+
+func (s *SocketServer) Stop() {
+	s.server.Close()
 }
 
 func (s *SocketServer) processClient(connection net.Conn) {
