@@ -2,6 +2,7 @@ package aero
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -24,7 +25,8 @@ type Aero struct {
 	Devices      []device.Device
 	Self         *device.Device
 	Server       api.Server
-	SocketServer socketserver.SocketServer
+	socketServer socketserver.SocketServer
+	grpcServer   *grpc.Server
 	IsMaster     bool
 }
 
@@ -37,21 +39,51 @@ func New(device device.Device, isMaster bool) Aero {
 }
 
 func (aero *Aero) Start() {
-	var grpcServer *grpc.Server
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
 	aero.Server.Devices = append(aero.Server.Devices, aero.generateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
-	aero.SocketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
-	grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
-	api.RegisterServiceServer(grpcServer, &aero.Server)
+	aero.socketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
+	aero.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
+	api.RegisterServiceServer(aero.grpcServer, &aero.Server)
 	lis, err := net.Listen("tcp", ":"+aero.Self.Port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	go aero.SocketServer.Start()
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %s", err)
+
+	go func() {
+		if err := aero.grpcServer.Serve(lis); err != nil {
+			logger.Log("ERR", "failed to serve: "+err.Error())
+			return
+		}
+	}()
+	aero.socketServer.Start()
+}
+
+func (aero *Aero) Stop() {
+	aero.grpcServer.Stop()
+	aero.socketServer.Stop()
+}
+
+func (aero *Aero) AddFile(f file.File) error {
+	for _, file := range aero.Self.Files {
+		if f.Hash == file.Hash {
+			return fmt.Errorf("file with same hash exists")
+		}
 	}
+	aero.Self.Files = append(aero.Self.Files, f)
+	aero.SendRefresh(*aero.Self)
+	return nil
+}
+
+func (aero *Aero) RemoveFileAt(fileIdx int) error {
+	if fileIdx < 0 && len(aero.Self.Files) >= fileIdx {
+		return fmt.Errorf("file index out of bound")
+	}
+	aero.Self.Files[fileIdx] = aero.Self.Files[len(aero.Self.Files)-1]
+	aero.Self.Files[len(aero.Self.Files)-1] = file.File{}
+	aero.Self.Files = aero.Self.Files[:len(aero.Self.Files)-1]
+	aero.SendRefresh(*aero.Self)
+	return nil
 }
 
 func (aero *Aero) SendInit(d device.Device, master device.Device) []device.Device {
@@ -81,7 +113,7 @@ func (aero *Aero) FetchFile(d device.Device, fileIdx int) (bool, string) {
 }
 
 func (aero *Aero) RequestFile(d device.Device, fileIdx int) {
-	aero.SocketServer.RequestFile(d, fileIdx)
+	aero.socketServer.RequestFile(d, fileIdx)
 }
 
 func (aero *Aero) initDevice(d *api.Device, master device.Device) []device.Device {
@@ -91,7 +123,7 @@ func (aero *Aero) initDevice(d *api.Device, master device.Device) []device.Devic
 	out := make([]device.Device, 0)
 	data, err := c.Init(ctx, d)
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("ERR", "error sending data: "+err.Error())
 		return nil
 	}
 	for _, d := range data.Devices {
@@ -109,7 +141,7 @@ func (aero *Aero) refreshDevice(d *api.Device) device.Device {
 
 	device, err := c.Refresh(ctx, d)
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("ERR", "error sending data: "+err.Error())
 		return out
 	}
 
@@ -124,7 +156,7 @@ func (aero *Aero) getList() []device.Device {
 	out := make([]device.Device, 0)
 	data, err := c.List(ctx, &api.Void{})
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("ERR", "error sending data: "+err.Error())
 		return nil
 	}
 	for _, d := range data.Devices {
@@ -142,7 +174,7 @@ func (aero *Aero) getStatus(d device.Device) device.Device {
 
 	device, err := c.Status(ctx, &api.Void{})
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("ERR", "error sending data: "+err.Error())
 		return out
 	}
 
@@ -161,7 +193,7 @@ func (aero *Aero) fetchFile(d device.Device, fileIdx int) (bool, string) {
 
 	resp, err := c.Fetch(ctx, &api.File{Hash: d.Files[fileIdx].Hash})
 	if err != nil {
-		logger.Log("error", "error sending data: "+err.Error())
+		logger.Log("ERR", "error sending data: "+err.Error())
 		return false, "error sending file request"
 	}
 
@@ -177,7 +209,7 @@ func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceCl
 	conn, err = grpc.Dial(d.Ip+":"+d.Port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
-		logger.Log("error", "connection error: "+err.Error())
+		logger.Log("ERR", "connection error: "+err.Error())
 		os.Exit(1)
 	}
 	c := api.NewServiceClient(conn)
@@ -189,15 +221,15 @@ func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceCl
 func (aero *Aero) authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		logger.Log("error", "cannot parse meta")
+		logger.Log("ERR", "cannot parse meta")
 		return nil, status.Error(codes.Unauthenticated, "INTERNAL_SERVER_ERROR")
 	}
 	if len(meta["jwt"]) != 1 {
-		logger.Log("error", "cannot parse meta - token empty")
+		logger.Log("ERR", "cannot parse meta - token empty")
 		return nil, status.Error(codes.Unauthenticated, "token empty")
 	}
 	if !auth.ValidToken(meta["jwt"][0]) {
-		logger.Log("error", "auth error")
+		logger.Log("ERR", "auth error")
 		return nil, status.Error(codes.PermissionDenied, "invalid auth token")
 	}
 	return handler(ctx, req)
@@ -206,7 +238,7 @@ func (aero *Aero) authInterceptor(ctx context.Context, req interface{}, _ *grpc.
 func (aero *Aero) generateToken() string {
 	token, err := auth.GenerateJWT()
 	if err != nil {
-		logger.Log("error", "error generating token: "+err.Error())
+		logger.Log("ERR", "error generating token: "+err.Error())
 		os.Exit(1)
 	}
 	return token
