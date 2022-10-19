@@ -19,6 +19,7 @@ import (
 )
 
 type Aero struct {
+	key          string
 	Devices      []device.Device
 	Self         *device.Device
 	Server       api.Server
@@ -35,7 +36,14 @@ func New(device device.Device, isMaster bool) Aero {
 	return aero
 }
 
+func (aero *Aero) SetKey(key string) {
+	aero.key = key
+}
+
 func (aero *Aero) StartGrpcServer() error {
+	if len(aero.key) == 0 {
+		return fmt.Errorf("auth key is not set")
+	}
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
 	aero.Server.Devices = append(aero.Server.Devices, device.GenerateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
@@ -49,6 +57,9 @@ func (aero *Aero) StartGrpcServer() error {
 }
 
 func (aero *Aero) StartSocketServer() error {
+	if len(aero.key) == 0 {
+		return fmt.Errorf("auth key is not set")
+	}
 	aero.socketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
 	return aero.socketServer.Start()
 }
@@ -106,8 +117,8 @@ func (aero *Aero) FetchFile(d device.Device, fileIdx int) error {
 	return aero.fetchFile(d, fileIdx)
 }
 
-func (aero *Aero) RequestFile(d device.Device, fileIdx int) {
-	aero.socketServer.RequestFile(d, fileIdx)
+func (aero *Aero) RequestFile(d device.Device, fileIdx int) error {
+	return aero.socketServer.RequestFile(d, fileIdx)
 }
 
 func (aero *Aero) initDevice(d *api.Device, master device.Device) ([]device.Device, error) {
@@ -233,14 +244,14 @@ func (aero *Aero) authInterceptor(ctx context.Context, req interface{}, _ *grpc.
 	if len(meta["jwt"]) != 1 {
 		return nil, status.Error(codes.Unauthenticated, "token empty")
 	}
-	if !auth.ValidToken(meta["jwt"][0]) {
+	if !auth.ValidToken(meta["jwt"][0], aero.key) {
 		return nil, status.Error(codes.PermissionDenied, "invalid auth token")
 	}
 	return handler(ctx, req)
 }
 
 func (aero *Aero) generateToken() string {
-	token, err := auth.GenerateJWT()
+	token, err := auth.GenerateJWT(aero.key)
 	if err != nil {
 		return ""
 	}
