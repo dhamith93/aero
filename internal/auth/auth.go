@@ -8,13 +8,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/dhamith93/aero/internal/logger"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -31,7 +29,6 @@ func CheckAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handl
 			if err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				json.NewEncoder(w).Encode("Unauthorized")
-				logger.Log("Auth Error", err.Error())
 			}
 
 			if token.Valid {
@@ -40,8 +37,6 @@ func CheckAuth(endpoint func(w http.ResponseWriter, r *http.Request)) http.Handl
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode("Unauthorized")
-			ip, _ := getIncomingIPAddr(r)
-			logger.Log("Auth Error", "Unauthorized request from "+ip)
 		}
 	})
 }
@@ -54,7 +49,6 @@ func ValidToken(token string) bool {
 		return []byte(GetKey()), nil
 	})
 	if err != nil {
-		logger.Log("Auth Error", err.Error())
 		return false
 	}
 	return t.Valid
@@ -111,29 +105,4 @@ func keyGen() string {
 		panic(err)
 	}
 	return b64.StdEncoding.EncodeToString(key)
-}
-
-func getIncomingIPAddr(r *http.Request) (string, error) {
-	ip := r.Header.Get("X-REAL-IP")
-	netIP := net.ParseIP(ip)
-	if netIP != nil {
-		return ip, nil
-	}
-	ips := r.Header.Get("X-FORWARDED-FOR")
-	splitIps := strings.Split(ips, ",")
-	for _, ip := range splitIps {
-		netIP := net.ParseIP(ip)
-		if netIP != nil {
-			return ip, nil
-		}
-	}
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return "", err
-	}
-	netIP = net.ParseIP(ip)
-	if netIP != nil {
-		return ip, nil
-	}
-	return "", fmt.Errorf("could not find valid ip for request")
 }
