@@ -6,13 +6,11 @@ import (
 	"net"
 	"os"
 	"strings"
-
-	"github.com/dhamith93/aero/internal/api"
 )
 
 type SocketServer struct {
 	Port    string
-	Devices *[]*api.Device
+	Devices *[]Device
 	Self    *Device
 	server  net.Listener
 }

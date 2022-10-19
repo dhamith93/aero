@@ -20,7 +20,7 @@ type Aero struct {
 	Devices      []Device
 	Self         *Device
 	Server       api.Server
-	socketServer SocketServer
+	SocketServer SocketServer
 	grpcServer   *grpc.Server
 	IsMaster     bool
 }
@@ -57,13 +57,13 @@ func (aero *Aero) StartSocketServer() error {
 	if len(aero.key) == 0 {
 		return fmt.Errorf("auth key is not set")
 	}
-	aero.socketServer = SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
-	return aero.socketServer.Start()
+	aero.SocketServer = SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Devices, Self: aero.Self}
+	return aero.SocketServer.Start()
 }
 
 func (aero *Aero) Stop() {
 	aero.grpcServer.Stop()
-	aero.socketServer.Stop()
+	aero.SocketServer.Stop()
 }
 
 func (aero *Aero) AddFile(f File) error {
@@ -115,7 +115,7 @@ func (aero *Aero) FetchFile(d Device, fileIdx int) error {
 }
 
 func (aero *Aero) RequestFile(d Device, fileIdx int) error {
-	return aero.socketServer.RequestFile(d, fileIdx)
+	return aero.SocketServer.RequestFile(d, fileIdx)
 }
 
 func (aero *Aero) initDevice(d *api.Device, master Device) ([]Device, error) {
