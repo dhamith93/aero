@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/dhamith93/aero/internal/logger"
 	"github.com/gabriel-vasile/mimetype"
 )
 
@@ -26,38 +25,35 @@ func New(path string) File {
 	return file
 }
 
-func (file *File) setMeta() {
+func (file *File) setMeta() error {
 	f, err := os.Open(file.Path)
 	if err != nil {
-		logger.Log("ERR", err.Error())
-		return
+		return err
 	}
 	defer f.Close()
 
 	mtype, err := mimetype.DetectFile(file.Path)
 	if err != nil {
-		logger.Log("ERR", err.Error())
-		return
+		return err
 	}
 
 	fileInfo, err := f.Stat()
 	if err != nil {
-		logger.Log("ERR", err.Error())
-		return
+		return err
 	}
 
 	file.Ext = mtype.Extension()
 	file.Type = mtype.String()
 	file.Size = fileInfo.Size()
 	file.Name = fileInfo.Name()
-	file.Hash = GetHash(f)
+	file.Hash, err = GetHash(f)
+	return err
 }
 
-func GetHash(f *os.File) string {
+func GetHash(f *os.File) (string, error) {
 	h := sha256.New()
 	if _, err := io.Copy(h, f); err != nil {
-		logger.Log("ERR", err.Error())
-		return ""
+		return "", err
 	}
-	return b64.StdEncoding.EncodeToString(h.Sum(nil))
+	return b64.StdEncoding.EncodeToString(h.Sum(nil)), nil
 }
