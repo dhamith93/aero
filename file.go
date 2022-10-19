@@ -1,4 +1,4 @@
-package file
+package aero
 
 import (
 	"crypto/sha256"
@@ -19,7 +19,7 @@ type File struct {
 	Size int64  `json:"size,omitempty"`
 }
 
-func New(path string) File {
+func NewFile(path string) File {
 	file := File{}
 	file.Path = path
 	file.setMeta()

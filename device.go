@@ -1,18 +1,17 @@
-package device
+package aero
 
 import (
-	"github.com/dhamith93/aero/file"
 	"github.com/dhamith93/aero/internal/api"
 )
 
 type Device struct {
-	Hash       string      `json:"hash,omitempty"`
-	Name       string      `json:"name,omitempty"`
-	Ip         string      `json:"ip,omitempty"`
-	Port       string      `json:"port,omitempty"`
-	SocketPort string      `json:"socketPort,omitempty"`
-	Files      []file.File `json:"files,omitempty"`
-	Active     bool        `json:"active,omitempty"`
+	Hash       string `json:"hash,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Ip         string `json:"ip,omitempty"`
+	Port       string `json:"port,omitempty"`
+	SocketPort string `json:"socketPort,omitempty"`
+	Files      []File `json:"files,omitempty"`
+	Active     bool   `json:"active,omitempty"`
 }
 
 func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
@@ -38,9 +37,9 @@ func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
 }
 
 func GenerateDeviceFromAPIDevice(d *api.Device) *Device {
-	files := make([]file.File, 0)
+	files := make([]File, 0)
 	for _, f := range d.Files {
-		files = append(files, *file.GenerateFileFromAPIFile(f))
+		files = append(files, *GenerateFileFromAPIFile(f))
 	}
 	return &Device{
 		Hash:       d.Hash,

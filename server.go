@@ -1,4 +1,4 @@
-package socketserver
+package aero
 
 import (
 	"fmt"
@@ -7,15 +7,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dhamith93/aero/device"
-	"github.com/dhamith93/aero/file"
 	"github.com/dhamith93/aero/internal/api"
 )
 
 type SocketServer struct {
 	Port    string
 	Devices *[]*api.Device
-	Self    *device.Device
+	Self    *Device
 	server  net.Listener
 }
 
@@ -70,7 +68,7 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	}
 
 	requestedFileHash := string(buffer[:mLen])
-	outputFile := file.File{}
+	outputFile := File{}
 
 	for _, file := range s.Self.Files {
 		if file.Hash == requestedFileHash {
@@ -98,7 +96,7 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	}
 }
 
-func (s *SocketServer) RequestFile(d device.Device, fileIdx int) error {
+func (s *SocketServer) RequestFile(d Device, fileIdx int) error {
 	connection, err := net.Dial("tcp", d.Ip+":"+d.SocketPort)
 	if err != nil {
 		return err
@@ -121,7 +119,7 @@ func (s *SocketServer) RequestFile(d device.Device, fileIdx int) error {
 		return err
 	}
 
-	createdFile := file.New(d.Files[fileIdx].Name)
+	createdFile := NewFile(d.Files[fileIdx].Name)
 	if d.Files[fileIdx].Hash != createdFile.Hash {
 		return fmt.Errorf("file transfer failed due to hash mismatch. want %s have %s", d.Files[fileIdx].Hash, createdFile.Hash)
 	}

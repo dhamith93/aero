@@ -6,11 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/dhamith93/aero/device"
-	"github.com/dhamith93/aero/file"
 	"github.com/dhamith93/aero/internal/api"
 	"github.com/dhamith93/aero/internal/auth"
-	socketserver "github.com/dhamith93/aero/internal/socket_server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -20,15 +17,15 @@ import (
 
 type Aero struct {
 	key          string
-	Devices      []device.Device
-	Self         *device.Device
+	Devices      []Device
+	Self         *Device
 	Server       api.Server
-	socketServer socketserver.SocketServer
+	socketServer SocketServer
 	grpcServer   *grpc.Server
 	IsMaster     bool
 }
 
-func New(device device.Device, isMaster bool) Aero {
+func New(device Device, isMaster bool) Aero {
 	aero := Aero{}
 	aero.Devices = append(aero.Devices, device)
 	aero.Self = &aero.Devices[0]
@@ -45,7 +42,7 @@ func (aero *Aero) StartGrpcServer() error {
 		return fmt.Errorf("auth key is not set")
 	}
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
-	aero.Server.Devices = append(aero.Server.Devices, device.GenerateAPIDeviceFromDevice(aero.Self))
+	aero.Server.Devices = append(aero.Server.Devices, GenerateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
 	aero.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
 	api.RegisterServiceServer(aero.grpcServer, &aero.Server)
@@ -60,7 +57,7 @@ func (aero *Aero) StartSocketServer() error {
 	if len(aero.key) == 0 {
 		return fmt.Errorf("auth key is not set")
 	}
-	aero.socketServer = socketserver.SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
+	aero.socketServer = SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Server.Devices, Self: aero.Self}
 	return aero.socketServer.Start()
 }
 
@@ -69,7 +66,7 @@ func (aero *Aero) Stop() {
 	aero.socketServer.Stop()
 }
 
-func (aero *Aero) AddFile(f file.File) error {
+func (aero *Aero) AddFile(f File) error {
 	for _, file := range aero.Self.Files {
 		if f.Hash == file.Hash {
 			return fmt.Errorf("file with same hash exists")
@@ -85,63 +82,63 @@ func (aero *Aero) RemoveFileAt(fileIdx int) error {
 		return fmt.Errorf("file index out of bound")
 	}
 	aero.Self.Files[fileIdx] = aero.Self.Files[len(aero.Self.Files)-1]
-	aero.Self.Files[len(aero.Self.Files)-1] = file.File{}
+	aero.Self.Files[len(aero.Self.Files)-1] = File{}
 	aero.Self.Files = aero.Self.Files[:len(aero.Self.Files)-1]
 	aero.SendRefresh(*aero.Self)
 	return nil
 }
 
-func (aero *Aero) SendInit(d device.Device, master device.Device) ([]device.Device, error) {
+func (aero *Aero) SendInit(d Device, master Device) ([]Device, error) {
 	aero.Self = &d
-	device := device.GenerateAPIDeviceFromDevice(&d)
+	device := GenerateAPIDeviceFromDevice(&d)
 	aero.Server.Self = device
 	return aero.initDevice(device, master)
 }
 
-func (aero *Aero) SendRefresh(d device.Device) (device.Device, error) {
+func (aero *Aero) SendRefresh(d Device) (Device, error) {
 	aero.Self = &d
-	device := device.GenerateAPIDeviceFromDevice(&d)
+	device := GenerateAPIDeviceFromDevice(&d)
 	aero.Server.Self = device
 	return aero.refreshDevice(device)
 }
 
-func (aero *Aero) GetList() ([]device.Device, error) {
+func (aero *Aero) GetList() ([]Device, error) {
 	return aero.getList()
 }
 
-func (aero *Aero) GetStatus(d device.Device) (device.Device, error) {
+func (aero *Aero) GetStatus(d Device) (Device, error) {
 	return aero.getStatus(d)
 }
 
-func (aero *Aero) FetchFile(d device.Device, fileIdx int) error {
+func (aero *Aero) FetchFile(d Device, fileIdx int) error {
 	return aero.fetchFile(d, fileIdx)
 }
 
-func (aero *Aero) RequestFile(d device.Device, fileIdx int) error {
+func (aero *Aero) RequestFile(d Device, fileIdx int) error {
 	return aero.socketServer.RequestFile(d, fileIdx)
 }
 
-func (aero *Aero) initDevice(d *api.Device, master device.Device) ([]device.Device, error) {
+func (aero *Aero) initDevice(d *api.Device, master Device) ([]Device, error) {
 	conn, c, ctx, cancel, err := aero.createClient(master)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 	defer cancel()
-	out := make([]device.Device, 0)
+	out := make([]Device, 0)
 	data, err := c.Init(ctx, d)
 	if err != nil {
 		return nil, err
 	}
 	for _, d := range data.Devices {
-		out = append(out, *device.GenerateDeviceFromAPIDevice(d))
+		out = append(out, *GenerateDeviceFromAPIDevice(d))
 	}
 	aero.Devices = out
 	return out, nil
 }
 
-func (aero *Aero) refreshDevice(d *api.Device) (device.Device, error) {
-	out := device.Device{}
+func (aero *Aero) refreshDevice(d *api.Device) (Device, error) {
+	out := Device{}
 	conn, c, ctx, cancel, err := aero.createClient(aero.Devices[0])
 	if err != nil {
 		return out, err
@@ -154,31 +151,31 @@ func (aero *Aero) refreshDevice(d *api.Device) (device.Device, error) {
 		return out, err
 	}
 
-	out = *device.GenerateDeviceFromAPIDevice(dev)
+	out = *GenerateDeviceFromAPIDevice(dev)
 	return out, nil
 }
 
-func (aero *Aero) getList() ([]device.Device, error) {
+func (aero *Aero) getList() ([]Device, error) {
 	conn, c, ctx, cancel, err := aero.createClient(aero.Devices[0])
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
 	defer cancel()
-	out := make([]device.Device, 0)
+	out := make([]Device, 0)
 	data, err := c.List(ctx, &api.Void{})
 	if err != nil {
 		return nil, err
 	}
 	for _, d := range data.Devices {
-		out = append(out, *device.GenerateDeviceFromAPIDevice(d))
+		out = append(out, *GenerateDeviceFromAPIDevice(d))
 	}
 	aero.Devices = out
 	return out, nil
 }
 
-func (aero *Aero) getStatus(d device.Device) (device.Device, error) {
-	out := device.Device{}
+func (aero *Aero) getStatus(d Device) (Device, error) {
+	out := Device{}
 	conn, c, ctx, cancel, err := aero.createClient(d)
 	if err != nil {
 		return out, err
@@ -191,11 +188,11 @@ func (aero *Aero) getStatus(d device.Device) (device.Device, error) {
 		return out, err
 	}
 
-	out = *device.GenerateDeviceFromAPIDevice(dev)
+	out = *GenerateDeviceFromAPIDevice(dev)
 	return out, nil
 }
 
-func (aero *Aero) fetchFile(d device.Device, fileIdx int) error {
+func (aero *Aero) fetchFile(d Device, fileIdx int) error {
 	conn, c, ctx, cancel, err := aero.createClient(d)
 	if err != nil {
 		return err
@@ -219,7 +216,7 @@ func (aero *Aero) fetchFile(d device.Device, fileIdx int) error {
 	return nil
 }
 
-func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceClient, context.Context, context.CancelFunc, error) {
+func (aero *Aero) createClient(d Device) (*grpc.ClientConn, api.ServiceClient, context.Context, context.CancelFunc, error) {
 	var (
 		conn *grpc.ClientConn
 		err  error
