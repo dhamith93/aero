@@ -9,10 +9,11 @@ import (
 )
 
 type SocketServer struct {
-	Port    string
-	Devices *[]Device
-	Self    *Device
-	server  net.Listener
+	Port     string
+	Devices  *[]Device
+	Self     *Device
+	server   net.Listener
+	Messages Messages
 }
 
 func (s *SocketServer) Start() error {
@@ -37,11 +38,11 @@ func (s *SocketServer) Stop() {
 
 func (s *SocketServer) processClient(connection net.Conn) {
 	defer connection.Close()
-	// logger.Log("MSG", "send_file: serving client: "+connection.RemoteAddr().String())
+	s.Messages.Add("send_file: serving client: "+connection.RemoteAddr().String(), MSG)
 	remoteAddr := strings.Split(connection.RemoteAddr().String(), ":")
 
 	if len(remoteAddr) < 2 {
-		// logger.Log("ERR", "send_file: cannot parse remote address to verification")
+		s.Messages.Add("send_file: cannot parse remote address to verification", ERR)
 		return
 	}
 
@@ -53,7 +54,7 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	}
 
 	if !found {
-		// logger.Log("ERR", "send_file: incoming device not found in list "+remoteAddr[0])
+		s.Messages.Add("send_file: incoming device not found in list "+remoteAddr[0], ERR)
 		return
 	}
 
@@ -61,7 +62,7 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	buffer := make([]byte, 1024)
 	mLen, err := connection.Read(buffer)
 	if err != nil {
-		// logger.Log("ERR", "send_file: "+err.Error())
+		s.Messages.Add("send_file: "+err.Error(), ERR)
 		return
 	}
 
@@ -76,21 +77,21 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	}
 
 	if !found {
-		// logger.Log("ERR", "send_file: requested file not found in list "+requestedFileHash)
+		s.Messages.Add("send_file: requested file not found in list "+requestedFileHash, ERR)
 		return
 	}
 
 	file, err := os.Open(strings.TrimSpace(outputFile.Path))
 	if err != nil {
-		// logger.Log("ERR", "send_file: "+err.Error())
+		s.Messages.Add("send_file: "+err.Error(), ERR)
 		return
 	}
 	defer file.Close()
 
-	// logger.Log("MSG", "send_file: sending "+outputFile.Name)
+	s.Messages.Add("send_file: sending "+outputFile.Name, MSG)
 	_, err = io.Copy(connection, file)
 	if err != nil {
-		// logger.Log("ERR", "send_file: "+err.Error())
+		s.Messages.Add("send_file: "+err.Error(), ERR)
 	}
 }
 
@@ -122,6 +123,6 @@ func (s *SocketServer) RequestFile(d Device, fileIdx int) error {
 		return fmt.Errorf("file transfer failed due to hash mismatch. want %s have %s", d.Files[fileIdx].Hash, createdFile.Hash)
 	}
 
-	// logger.Log("MSG", "rec: file: "+createdFile.Name+" from: "+d.Name+" "+d.Ip)
+	s.Messages.Add("rec: file: "+createdFile.Name+" from: "+d.Name+" "+d.Ip, MSG)
 	return nil
 }

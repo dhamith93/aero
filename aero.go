@@ -57,7 +57,7 @@ func (aero *Aero) StartSocketServer() error {
 	if len(aero.key) == 0 {
 		return fmt.Errorf("auth key is not set")
 	}
-	aero.SocketServer = SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Devices, Self: aero.Self}
+	aero.SocketServer = SocketServer{Port: aero.Server.Self.SocketPort, Devices: &aero.Devices, Self: aero.Self, Messages: &AeroMessages{}}
 	return aero.SocketServer.Start()
 }
 
