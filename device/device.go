@@ -2,6 +2,7 @@ package device
 
 import (
 	"github.com/dhamith93/aero/file"
+	"github.com/dhamith93/aero/internal/api"
 )
 
 type Device struct {
@@ -12,4 +13,42 @@ type Device struct {
 	SocketPort string      `json:"socketPort,omitempty"`
 	Files      []file.File `json:"files,omitempty"`
 	Active     bool        `json:"active,omitempty"`
+}
+
+func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
+	files := make([]*api.File, 0)
+	for _, f := range d.Files {
+		files = append(files, &api.File{
+			Name: f.Name,
+			Hash: f.Hash,
+			Ext:  f.Ext,
+			Type: f.Type,
+			Size: f.Size,
+		})
+	}
+	return &api.Device{
+		Hash:       d.Hash,
+		Name:       d.Name,
+		Ip:         d.Ip,
+		Port:       d.Port,
+		SocketPort: d.SocketPort,
+		Active:     d.Active,
+		Files:      files,
+	}
+}
+
+func GenerateDeviceFromAPIDevice(d *api.Device) *Device {
+	files := make([]file.File, 0)
+	for _, f := range d.Files {
+		files = append(files, *file.GenerateFileFromAPIFile(f))
+	}
+	return &Device{
+		Hash:       d.Hash,
+		Name:       d.Name,
+		Ip:         d.Ip,
+		Port:       d.Port,
+		SocketPort: d.SocketPort,
+		Active:     d.Active,
+		Files:      files,
+	}
 }

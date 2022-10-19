@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/dhamith93/aero/internal/api"
 	"github.com/gabriel-vasile/mimetype"
 )
 
@@ -56,4 +57,14 @@ func GetHash(f *os.File) (string, error) {
 		return "", err
 	}
 	return b64.StdEncoding.EncodeToString(h.Sum(nil)), nil
+}
+
+func GenerateFileFromAPIFile(f *api.File) *File {
+	return &File{
+		Name: f.Name,
+		Hash: f.Hash,
+		Ext:  f.Ext,
+		Type: f.Type,
+		Size: f.Size,
+	}
 }

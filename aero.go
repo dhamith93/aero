@@ -10,7 +10,6 @@ import (
 	"github.com/dhamith93/aero/file"
 	"github.com/dhamith93/aero/internal/api"
 	"github.com/dhamith93/aero/internal/auth"
-	"github.com/dhamith93/aero/internal/logger"
 	socketserver "github.com/dhamith93/aero/internal/socket_server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,7 +37,7 @@ func New(device device.Device, isMaster bool) Aero {
 
 func (aero *Aero) StartGrpcServer() error {
 	aero.Server = api.Server{IsMaster: aero.IsMaster}
-	aero.Server.Devices = append(aero.Server.Devices, aero.generateAPIDeviceFromDevice(aero.Self))
+	aero.Server.Devices = append(aero.Server.Devices, device.GenerateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
 	aero.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
 	api.RegisterServiceServer(aero.grpcServer, &aero.Server)
@@ -83,14 +82,14 @@ func (aero *Aero) RemoveFileAt(fileIdx int) error {
 
 func (aero *Aero) SendInit(d device.Device, master device.Device) ([]device.Device, error) {
 	aero.Self = &d
-	device := aero.generateAPIDeviceFromDevice(&d)
+	device := device.GenerateAPIDeviceFromDevice(&d)
 	aero.Server.Self = device
 	return aero.initDevice(device, master)
 }
 
 func (aero *Aero) SendRefresh(d device.Device) (device.Device, error) {
 	aero.Self = &d
-	device := aero.generateAPIDeviceFromDevice(&d)
+	device := device.GenerateAPIDeviceFromDevice(&d)
 	aero.Server.Self = device
 	return aero.refreshDevice(device)
 }
@@ -121,11 +120,10 @@ func (aero *Aero) initDevice(d *api.Device, master device.Device) ([]device.Devi
 	out := make([]device.Device, 0)
 	data, err := c.Init(ctx, d)
 	if err != nil {
-		logger.Error(fmt.Errorf("error sending data: " + err.Error()))
 		return nil, err
 	}
 	for _, d := range data.Devices {
-		out = append(out, *aero.generateDeviceFromAPIDevice(d))
+		out = append(out, *device.GenerateDeviceFromAPIDevice(d))
 	}
 	aero.Devices = out
 	return out, nil
@@ -140,13 +138,12 @@ func (aero *Aero) refreshDevice(d *api.Device) (device.Device, error) {
 	defer conn.Close()
 	defer cancel()
 
-	device, err := c.Refresh(ctx, d)
+	dev, err := c.Refresh(ctx, d)
 	if err != nil {
-		logger.Log("ERR", "error sending data: "+err.Error())
 		return out, err
 	}
 
-	out = *aero.generateDeviceFromAPIDevice(device)
+	out = *device.GenerateDeviceFromAPIDevice(dev)
 	return out, nil
 }
 
@@ -160,11 +157,10 @@ func (aero *Aero) getList() ([]device.Device, error) {
 	out := make([]device.Device, 0)
 	data, err := c.List(ctx, &api.Void{})
 	if err != nil {
-		logger.Log("ERR", "error sending data: "+err.Error())
 		return nil, err
 	}
 	for _, d := range data.Devices {
-		out = append(out, *aero.generateDeviceFromAPIDevice(d))
+		out = append(out, *device.GenerateDeviceFromAPIDevice(d))
 	}
 	aero.Devices = out
 	return out, nil
@@ -179,13 +175,12 @@ func (aero *Aero) getStatus(d device.Device) (device.Device, error) {
 	defer conn.Close()
 	defer cancel()
 
-	device, err := c.Status(ctx, &api.Void{})
+	dev, err := c.Status(ctx, &api.Void{})
 	if err != nil {
-		logger.Log("ERR", "error sending data: "+err.Error())
 		return out, err
 	}
 
-	out = *aero.generateDeviceFromAPIDevice(device)
+	out = *device.GenerateDeviceFromAPIDevice(dev)
 	return out, nil
 }
 
@@ -203,8 +198,7 @@ func (aero *Aero) fetchFile(d device.Device, fileIdx int) error {
 
 	resp, err := c.Fetch(ctx, &api.File{Hash: d.Files[fileIdx].Hash})
 	if err != nil {
-		logger.Log("ERR", "error sending data: "+err.Error())
-		return fmt.Errorf("error sending file request")
+		return err
 	}
 
 	if !resp.Success {
@@ -223,7 +217,6 @@ func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceCl
 	conn, err = grpc.Dial(d.Ip+":"+d.Port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
-		logger.Log("ERR", "connection error: "+err.Error())
 		return nil, nil, nil, nil, err
 	}
 	c := api.NewServiceClient(conn)
@@ -235,15 +228,12 @@ func (aero *Aero) createClient(d device.Device) (*grpc.ClientConn, api.ServiceCl
 func (aero *Aero) authInterceptor(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	meta, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		logger.Log("ERR", "cannot parse meta")
 		return nil, status.Error(codes.Unauthenticated, "INTERNAL_SERVER_ERROR")
 	}
 	if len(meta["jwt"]) != 1 {
-		logger.Log("ERR", "cannot parse meta - token empty")
 		return nil, status.Error(codes.Unauthenticated, "token empty")
 	}
 	if !auth.ValidToken(meta["jwt"][0]) {
-		logger.Log("ERR", "auth error")
 		return nil, status.Error(codes.PermissionDenied, "invalid auth token")
 	}
 	return handler(ctx, req)
@@ -252,56 +242,7 @@ func (aero *Aero) authInterceptor(ctx context.Context, req interface{}, _ *grpc.
 func (aero *Aero) generateToken() string {
 	token, err := auth.GenerateJWT()
 	if err != nil {
-		logger.Log("ERR", "error generating token: "+err.Error())
 		return ""
 	}
 	return token
-}
-
-func (aero *Aero) generateAPIDeviceFromDevice(d *device.Device) *api.Device {
-	files := make([]*api.File, 0)
-	for _, f := range d.Files {
-		files = append(files, &api.File{
-			Name: f.Name,
-			Hash: f.Hash,
-			Ext:  f.Ext,
-			Type: f.Type,
-			Size: f.Size,
-		})
-	}
-	return &api.Device{
-		Hash:       d.Hash,
-		Name:       d.Name,
-		Ip:         d.Ip,
-		Port:       d.Port,
-		SocketPort: d.SocketPort,
-		Active:     d.Active,
-		Files:      files,
-	}
-}
-
-func (aero *Aero) generateDeviceFromAPIDevice(d *api.Device) *device.Device {
-	files := make([]file.File, 0)
-	for _, f := range d.Files {
-		files = append(files, *aero.generateFileFromAPIFile(f))
-	}
-	return &device.Device{
-		Hash:       d.Hash,
-		Name:       d.Name,
-		Ip:         d.Ip,
-		Port:       d.Port,
-		SocketPort: d.SocketPort,
-		Active:     d.Active,
-		Files:      files,
-	}
-}
-
-func (aero *Aero) generateFileFromAPIFile(f *api.File) *file.File {
-	return &file.File{
-		Name: f.Name,
-		Hash: f.Hash,
-		Ext:  f.Ext,
-		Type: f.Type,
-		Size: f.Size,
-	}
 }
