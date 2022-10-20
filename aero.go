@@ -22,6 +22,7 @@ type Aero struct {
 	Server       api.Server
 	SocketServer SocketServer
 	grpcServer   *grpc.Server
+	Listener     chan bool
 	IsMaster     bool
 }
 
@@ -30,6 +31,7 @@ func New(device Device, isMaster bool) Aero {
 	aero.Devices = append(aero.Devices, device)
 	aero.Self = &aero.Devices[0]
 	aero.IsMaster = isMaster
+	aero.Listener = make(chan bool)
 	return aero
 }
 
@@ -41,7 +43,7 @@ func (aero *Aero) StartGrpcServer() error {
 	if len(aero.key) == 0 {
 		return fmt.Errorf("auth key is not set")
 	}
-	aero.Server = api.Server{IsMaster: aero.IsMaster}
+	aero.Server = api.Server{IsMaster: aero.IsMaster, Listener: &aero.Listener}
 	aero.Server.Devices = append(aero.Server.Devices, GenerateAPIDeviceFromDevice(aero.Self))
 	aero.Server.Self = aero.Server.Devices[0]
 	aero.grpcServer = grpc.NewServer(grpc.UnaryInterceptor(aero.authInterceptor))
@@ -50,6 +52,7 @@ func (aero *Aero) StartGrpcServer() error {
 	if err != nil {
 		return err
 	}
+	go aero.listenForDeviceChanges()
 	return aero.grpcServer.Serve(lis)
 }
 
@@ -64,6 +67,19 @@ func (aero *Aero) StartSocketServer() error {
 func (aero *Aero) Stop() {
 	aero.grpcServer.Stop()
 	aero.SocketServer.Stop()
+}
+
+func (aero *Aero) listenForDeviceChanges() {
+	for v := range aero.Listener {
+		if v {
+			out := []Device{}
+			for _, d := range aero.Server.Devices {
+				out = append(out, *GenerateDeviceFromAPIDevice(d))
+			}
+			aero.Devices = out
+		}
+	}
+	aero.Listener <- true
 }
 
 func (aero *Aero) AddFile(f File) error {

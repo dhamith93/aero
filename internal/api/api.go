@@ -8,6 +8,7 @@ import (
 type Server struct {
 	Devices  []*Device
 	Self     *Device
+	Listener *chan bool
 	IsMaster bool
 }
 
@@ -20,6 +21,7 @@ func (s *Server) Init(ctx context.Context, in *Device) (*Devices, error) {
 	for i := range s.Devices {
 		devices = append(devices, s.Devices[i])
 	}
+	*s.Listener <- true
 	return &Devices{Devices: devices}, nil
 }
 
@@ -32,6 +34,7 @@ func (s *Server) Refresh(ctx context.Context, in *Device) (*Device, error) {
 		if s.Devices[i].Hash == in.Hash {
 			s.Devices[i].Files = in.Files
 			s.Devices[i].Active = in.Active
+			*s.Listener <- true
 			return s.Devices[i], nil
 		}
 	}
