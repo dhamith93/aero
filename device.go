@@ -10,7 +10,6 @@ type Device struct {
 	Port       string `json:"port,omitempty"`
 	SocketPort string `json:"socketPort,omitempty"`
 	Files      []File `json:"files,omitempty"`
-	Active     bool   `json:"active,omitempty"`
 }
 
 func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
@@ -29,7 +28,6 @@ func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
 		Ip:         d.Ip,
 		Port:       d.Port,
 		SocketPort: d.SocketPort,
-		Active:     d.Active,
 		Files:      files,
 	}
 }
@@ -44,7 +42,6 @@ func GenerateDeviceFromAPIDevice(d *api.Device) *Device {
 		Ip:         d.Ip,
 		Port:       d.Port,
 		SocketPort: d.SocketPort,
-		Active:     d.Active,
 		Files:      files,
 	}
 }
