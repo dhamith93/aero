@@ -2,7 +2,7 @@
 Go module for file sharing between devices. Master device starts the server and node devices connect to the server. Once connected, each device can communicate with each other to get shared file list and directly download the shared files.
 ## Usage
 
-### Server
+### Master device
 ```go
 import (
 	// ...
@@ -33,7 +33,7 @@ func main() {
 }
 ```
 
-### Client
+### Node device
 ```go
 import (
 	// ...
