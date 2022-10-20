@@ -10,26 +10,26 @@ import (
 )
 
 func main() {
-	files := make([]aero.File, 0)
-	files = append(files, aero.NewFile("/path/to/file"))
-	aero := aero.New(
-		aero.Device{
-			Name:       "MASTER",
-			Ip:         "192.168.1.2",
-			Port:       "9000",
-			SocketPort: "9001",
-			Files:      files,
-		},
-		true,
-	)
+    files := make([]aero.File, 0)
+    files = append(files, aero.NewFile("/path/to/file"))
+    aero := aero.New(
+        aero.Device{
+            Name:       "MASTER",
+            Ip:         "192.168.1.2",
+            Port:       "9000",
+            SocketPort: "9001",
+            Files:      files,
+        },
+        true,
+    )
 
-	aero.SetKey("key-for-jwt-tokens")
+    aero.SetKey("key-for-jwt-tokens")
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go aero.StartGrpcServer()
-	go aero.StartSocketServer()
-	wg.Wait()
+    var wg sync.WaitGroup
+    wg.Add(2)
+    go aero.StartGrpcServer()
+    go aero.StartSocketServer()
+    wg.Wait()
 }
 ```
 
@@ -41,26 +41,26 @@ import (
 )
 
 func main() {
-	files := make([]aero.File, 0)
-	files = append(files, aero.NewFile("/path/to/file"))
-	aeroNew := aero.New(
-		aero.Device{
-			Name:       "Node",
-			Ip:         "192.168.1.3",
-			Port:       "9000",
-			SocketPort: "9001",
-			Files:      files,
-		},
-		true,
-	)
+    files := make([]aero.File, 0)
+    files = append(files, aero.NewFile("/path/to/file"))
+    aeroNew := aero.New(
+        aero.Device{
+            Name:       "Node",
+            Ip:         "192.168.1.3",
+            Port:       "9000",
+            SocketPort: "9001",
+            Files:      files,
+        },
+        true,
+    )
 
     aeroNew.SetKey("key-for-jwt-tokens")
 
     // Register new device to server
     res, err := aeroNew.SendInit(*aeroNew.Self, aero.Device{Port: "9000", Ip: "192.168.1.2"})
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+    if err != nil {
+        fmt.Println(err.Error())
+    }
 
     // Get list of devices with files
     devices, err = aeroNew.GetList()
@@ -76,16 +76,16 @@ func main() {
     downloadId := aeroNew.Download(devices[0], fileIdx)
 
     for {
-		if aeroNew.SocketServer.Downloads[downloadId].Progress == 100 && aeroNew.SocketServer.Downloads[downloadId].HashMatched {
-			fmt.Println("file downloaded")
-			break
-		}
-		if aeroNew.SocketServer.Downloads[downloadId].Error != nil {
-			fmt.Println(aeroNew.SocketServer.Downloads[downloadId].Error.Error())
-			break
-		}
-		fmt.Println(aeroNew.SocketServer.Downloads[downloadId].Progress)		
-	}
+        if aeroNew.SocketServer.Downloads[downloadId].Progress == 100 && aeroNew.SocketServer.Downloads[downloadId].HashMatched {
+            fmt.Println("file downloaded")
+            break
+        }
+        if aeroNew.SocketServer.Downloads[downloadId].Error != nil {
+            fmt.Println(aeroNew.SocketServer.Downloads[downloadId].Error.Error())
+            break
+        }
+        fmt.Println(aeroNew.SocketServer.Downloads[downloadId].Progress)		
+    }
 
     // Get messages/logs 
     fmt.Println(aeroNew.SocketServer.Messages.Get())
