@@ -5,7 +5,6 @@ import (
 )
 
 type Device struct {
-	Hash       string `json:"hash,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Ip         string `json:"ip,omitempty"`
 	Port       string `json:"port,omitempty"`
@@ -26,7 +25,6 @@ func GenerateAPIDeviceFromDevice(d *Device) *api.Device {
 		})
 	}
 	return &api.Device{
-		Hash:       d.Hash,
 		Name:       d.Name,
 		Ip:         d.Ip,
 		Port:       d.Port,
@@ -42,7 +40,6 @@ func GenerateDeviceFromAPIDevice(d *api.Device) *Device {
 		files = append(files, *GenerateFileFromAPIFile(f))
 	}
 	return &Device{
-		Hash:       d.Hash,
 		Name:       d.Name,
 		Ip:         d.Ip,
 		Port:       d.Port,
