@@ -8,12 +8,27 @@ import (
 	"strings"
 )
 
+type ProgressWriter struct {
+	FileSize    int64
+	Received    int64
+	Progress    int
+	HashMatched bool
+	Error       error
+}
+
+func (pw *ProgressWriter) Write(data []byte) (int, error) {
+	pw.Received += int64(len(data))
+	pw.Progress = int((pw.Received * 100) / pw.FileSize)
+	return pw.Progress, nil
+}
+
 type SocketServer struct {
-	Port     string
-	Devices  *[]Device
-	Self     *Device
-	server   net.Listener
-	Messages Messages
+	Port      string
+	Devices   *[]Device
+	Self      *Device
+	server    net.Listener
+	Messages  Messages
+	Downloads map[int]*ProgressWriter
 }
 
 func (s *SocketServer) Start() error {
@@ -23,12 +38,13 @@ func (s *SocketServer) Start() error {
 		return err
 	}
 	defer s.server.Close()
+	s.Downloads = make(map[int]*ProgressWriter)
 	for {
 		connection, err := s.server.Accept()
 		if err != nil {
 			return err
 		}
-		go s.processClient(connection)
+		go s.handleFileRequest(connection)
 	}
 }
 
@@ -36,7 +52,7 @@ func (s *SocketServer) Stop() {
 	s.server.Close()
 }
 
-func (s *SocketServer) processClient(connection net.Conn) {
+func (s *SocketServer) handleFileRequest(connection net.Conn) {
 	defer connection.Close()
 	s.Messages.Add("send_file: serving client: "+connection.RemoteAddr().String(), MSG)
 	remoteAddr := strings.Split(connection.RemoteAddr().String(), ":")
@@ -95,34 +111,55 @@ func (s *SocketServer) processClient(connection net.Conn) {
 	}
 }
 
-func (s *SocketServer) RequestFile(d Device, fileIdx int) error {
+func (s *SocketServer) Download(d Device, fileIdx int) int {
+	if s.Downloads == nil {
+		s.Downloads = make(map[int]*ProgressWriter)
+	}
+
+	id := len(s.Downloads) + 1
+	s.Downloads[id] = &ProgressWriter{FileSize: d.Files[fileIdx].Size}
+	go s.download(d, fileIdx, id)
+	return id
+}
+
+func (s *SocketServer) download(d Device, fileIdx int, downloadId int) {
+	progressWriter := s.Downloads[downloadId]
 	connection, err := net.Dial("tcp", d.Ip+":"+d.SocketPort)
 	if err != nil {
-		return err
+		progressWriter.Error = err
+		return
 	}
 	defer connection.Close()
 
 	_, err = connection.Write([]byte(d.Files[fileIdx].Hash))
 	if err != nil {
-		return err
+		progressWriter.Error = err
+		return
 	}
 
 	newFile, err := os.Create(d.Files[fileIdx].Name)
 	if err != nil {
-		return err
+		progressWriter.Error = err
+		return
 	}
 	defer newFile.Close()
 
-	_, err = io.Copy(newFile, connection)
+	rdr := io.TeeReader(connection, progressWriter)
+
+	_, err = io.Copy(newFile, rdr)
 	if err != nil {
-		return err
+		progressWriter.Error = err
+		return
 	}
 
 	createdFile := NewFile(d.Files[fileIdx].Name)
 	if d.Files[fileIdx].Hash != createdFile.Hash {
-		return fmt.Errorf("file transfer failed due to hash mismatch. want %s have %s", d.Files[fileIdx].Hash, createdFile.Hash)
+		err := fmt.Errorf("file transfer failed due to hash mismatch. want %s have %s", d.Files[fileIdx].Hash, createdFile.Hash)
+		progressWriter.Error = err
+		progressWriter.HashMatched = false
+		return
 	}
 
-	s.Messages.Add("rec: file: "+createdFile.Name+" from: "+d.Name+" "+d.Ip, MSG)
-	return nil
+	s.Messages.Add("received file: "+createdFile.Name+" from: "+d.Name+" "+d.Ip, MSG)
+	progressWriter.HashMatched = true
 }

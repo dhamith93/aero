@@ -130,8 +130,8 @@ func (aero *Aero) FetchFile(d Device, fileIdx int) error {
 	return aero.fetchFile(d, fileIdx)
 }
 
-func (aero *Aero) RequestFile(d Device, fileIdx int) error {
-	return aero.SocketServer.RequestFile(d, fileIdx)
+func (aero *Aero) Download(d Device, fileIdx int) int {
+	return aero.SocketServer.Download(d, fileIdx)
 }
 
 func (aero *Aero) initDevice(d *api.Device, master Device) ([]Device, error) {
