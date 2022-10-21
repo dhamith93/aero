@@ -57,7 +57,7 @@ func main() {
     aeroNew.SetKey("key-for-jwt-tokens")
 
     // Register new device to server
-    res, err := aeroNew.SendInit(*aeroNew.Self, aero.Device{Port: "9000", Ip: "192.168.1.2"})
+    devices, err := aeroNew.SendInit(*aeroNew.Self, aero.Device{Port: "9000", Ip: "192.168.1.2"})
     if err != nil {
         fmt.Println(err.Error())
     }
